@@ -70,4 +70,5 @@ def write_metadata(breadcrumb, sub_schema):
 ####     - like `from burler import stream` then that is a reference to an object that gets modified by the decorators for use in context
 #### How to do stream dependencies?
 #### Config options that support WSDLs?
+#### Credentials refresh options on the client? Like periodic(refresh_func, min=25), or one_time(refresh_func)
 ```
