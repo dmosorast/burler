@@ -29,8 +29,14 @@ def wsdl(url=None):
 # TODO: Not sure of the best pattern for this, so that streams can access tap for their decorators
 # - Maybe a static accessor on the Tap class? With one set before tap() returns it
 _tap = None
-def tap():
+def tap(config_spec=None):
     # Create the tap "app" and return it
     # This might also be able to set the main entrypoint of the tap?
     # That way the user doesn't need to wrap for exceptions, or anything, but they can specify it!
-    pass
+    _tap = Tap(config_spec)
+
+    return _tap
+
+def main():
+    """ This is the entry point for a tap run, just like in a tap, this will parse args, and run discovery/sync. """
+    print("Hello CLI!")
