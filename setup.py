@@ -9,7 +9,13 @@ def load_tap_name():
     ws = pkg_resources.WorkingSet()
     # TODO: This could be smarter, like look at the module that has a "tap" object
     matches = [s.key for s in ws if s.key.startswith("tap")]
+    print([s.key for s in ws])
     if not matches:
+        #raise Exception(str(sys.prefix) + "\n" + str(sys.base_prefix))
+        # TODO: This is flawed. There's a circular dependency issue here.
+        # We can't really check the thing that depends on this from this, unless there's some bootstrapping way we can check the modules from install only
+        # Is ther an "on required" kind of thing?
+        return "singer"
         raise Exception("No module named 'tap...' found. Burler must be installed in a tap project's directory.")
     return matches[0]
 
