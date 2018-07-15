@@ -56,9 +56,15 @@ def check_for_tap_in_module(module):
 def cli():
     pass
 
-@cli.command(name='test')
-def test_tap():
-    # Feature (TEST): `singer test <tap_name> <configs>` Run discovery and sync stuff, validate and look for weird things with the output! To help ensure the best practices are being upheld. Possible scoring of tap's best practices?
+@cli.command(name='verify')
+def verify_tap():
+    """ Wraps the run command with pass-through best practices verification. E.g., memory consumption, output format, etc. """
+    # TODO: Feature (TEST): `singer test <tap_name> <configs>` Run discovery and sync stuff, validate and look for weird things with the output! To help ensure the best practices are being upheld. Possible scoring of tap's best practices?
+    # This could just check for singer best practices as we have them defined, things like memory consumption, etc.
+    # It should just wrap main with this kind of validation so we can generate a report at the end of it all in the Logging
+    # How does it make sense to call this?
+    #    Like singer run tap-foo --verify-best-practices --discover --config /tmp/discover_config.json, etc?
+    # or Like singer verify tap-foo --discover --config /tmp/tap_config.json, ?
     LOGGER.info("(NotImplemented) No tests to run yet!")
 
 @cli.command(name='run')
