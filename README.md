@@ -5,6 +5,14 @@
 
 A library to help write taps in accordance with the [Singer specification](https://github.com/singer-io/getting-started).
 
+
+# Features
+- **Config file validation** Burler supports the following methods of validating config:
+  - Key-based inference - Takes a provided `dict` and validates that *ALL* its keys are present at runtime (no optional config support)
+  - [Voluptuous](https://github.com/alecthomas/voluptuous) Schema - Validates according to a voluptuous Schema object
+  - [schema](https://github.com/keleshev/schema) - Validates according to a schema Schema object
+  - (Coming Soon) Example Config File - Same as key-based inference, but a relative file path can be specified instead of a dict object
+
 # Brainstorming
 
 Some thoughts on how this library will look, overall. Flask-style app declaration with its own decorators to declare streams' methods.

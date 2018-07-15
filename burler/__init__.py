@@ -1,5 +1,6 @@
 from burler.taps import Tap
 from burler.streams import Stream
+from burler.exceptions import TapNotDefinedException, TapRedefinedException
 
 import re
 import sys
@@ -35,18 +36,10 @@ def wsdl(url=None):
         return {}
     return get_schema
 
-# TODO: Not sure of the best pattern for this, so that streams can access tap for their decorators
-# - Maybe a static accessor on the Tap class? With one set before tap() returns it
-_tap = None
 def tap(config_spec=None):
-    # Create the tap "app" and return it
-    # This might also be able to set the main entrypoint of the tap?
-    # That way the user doesn't need to wrap for exceptions, or anything, but they can specify it!
-    # TODO: Make class-level variable instead of global
-    global _tap
-    _tap = Tap(config_spec)
+    Tap.__tap = Tap(config_spec)
 
-    return _tap
+    return Tap.__tap
 
 def check_for_tap_in_module(module):
     # Find the tap object definition for this (it should be created since we imported it
@@ -59,7 +52,11 @@ def check_for_tap_in_module(module):
             return tap_obj
     return None
 
-@click.command('run')
+@click.command(name='test')
+def test_tap():
+    LOGGER.info("(NotImplemented) No tests to run yet!")
+
+@click.command(name='run')
 @click.argument('tap_name')
 @click.option('--config', help='The config file for the tap.')
 @click.option('--discover', '-d', is_flag=True, help='Run discovery mode.')
@@ -77,18 +74,20 @@ def main(tap_name, config, discover, state, catalog):
         module_name = re.sub('-', '_', tap_name)
         module = __import__(module_name)
     except ImportError as ex:
-        LOGGER.critical("Could not import tap '%s', please ensure that it follows underscore naming conventions and is installed in this environment.", module_name)
+        # Log and exit instead of raise since this is the result of an Exception
+        LOGGER.critical("Could not import tap '%s', please ensure that the root tap module follows underscore naming conventions and is installed in this environment.\n\nExample:\n\t/\n\t\t/tap_name/__init__.py\n\t\t/setup.py", module_name)
         sys.exit(1)
 
     tap_def = check_for_tap_in_module(module)
     if tap_def is None:
-        raise Exception("Could not find an instance of Tap in module '{}'. Please ensure that it is defined at the top level module of the tap. (__init__.py or {}.py)".format(module_name, module_name))
+        raise TapNotDefinedException("Could not find an instance of Tap in module '{}'. Please ensure that it is defined at the top level module of the tap. (__init__.py or {}.py)".format(module_name, module_name))
 
-    if tap_def is not _tap:
-        import pdb
-        pdb.set_trace()
-        raise Exception("Found tap definition for module {}, but it is out of sync with Burler's tap object. Please ensure that it is not being redefined.".format(module_name))
+    if tap_def is not Tap.__tap:
+        raise TapRedefinedException("Found tap definition for module {}, but it is out of sync with Burler's tap object. Please ensure that it is not being redefined.".format(module_name))
 
     # Otherwise... lets get started!
-    
-    print("Hello CLI!")
+    # TODO: Parse config and validate w/ tap's definition
+    if discover:
+        Tap.__tap.do_discover()
+    else:
+        Tap.__tap.do_sync()
