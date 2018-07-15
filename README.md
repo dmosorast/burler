@@ -8,7 +8,8 @@ A library to help write taps in accordance with the [Singer specification](https
 
 # Features
 - **Config file validation** Burler supports the following methods of validating config:
-  - Key-based inference - Takes a provided `dict` and validates that *ALL* its keys are present at runtime (no optional config support)
+  - List Key-based inference - Takes a provided `list` of required keys and ensures that they are present
+  - Dict Key-based inference - Takes a provided `dict` and validates that *ALL* its keys are present at runtime (no optional config support)
   - [Voluptuous](https://github.com/alecthomas/voluptuous) Schema - Validates according to a voluptuous Schema object
   - [schema](https://github.com/keleshev/schema) - Validates according to a schema Schema object
   - (Coming Soon) Example Config File - Same as key-based inference, but a relative file path can be specified instead of a dict object

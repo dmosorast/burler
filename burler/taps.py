@@ -14,7 +14,16 @@ class Tap:
     __tap = None
 
     debug_mode = False
-    validate_config = lambda _: LOGGER.warn("No configuration validation specified, skipping validation...")
+    _validate = lambda c: LOGGER.warn("No configuration spec provided, skipping further validation...") or c # Returns c
+
+    def _validate_basic_conf_practices(self, conf):
+        if not isinstance(conf, dict):
+            raise ConfigValidationException("The root of the configuration must be a JSON object.")
+        # TODO: Add warnings for suggested practices? like "user_agent"?
+
+    def validate_config(self, conf):
+        _validate_basic_conf_practices(conf)
+        return _validate(conf)
 
     def __init__(self, config_spec=None, debug=False):
         if isinstance(config_spec, str):
@@ -22,6 +31,17 @@ class Tap:
                 # Load sample file, need root of schema repo.
                 # Iterate over it recursivley and build up a basic schema object
                 raise NotImplementedError("Specifying example schema path is not supported yet.")
+            self.validate_config = validate
+
+        if isinstance(config_spec, list):
+            def validate(conf):
+                self._validate_basic_conf_practices(conf)
+                provided_keys = set(conf.keys())
+                required_keys = set(config_spec)
+                difference = required_keys - provided_keys
+                if any(difference):
+                    raise ConfigValidationException("Missing required configuration keys: {}".format(difference))
+                return conf
             self.validate_config = validate
 
         if isinstance(config_spec, dict):
