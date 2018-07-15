@@ -52,11 +52,16 @@ def check_for_tap_in_module(module):
             return tap_obj
     return None
 
-@click.command(name='test')
+@click.group()
+def cli():
+    pass
+
+@cli.command(name='test')
 def test_tap():
+    # Feature (TEST): `singer test <tap_name> <configs>` Run discovery and sync stuff, validate and look for weird things with the output! To help ensure the best practices are being upheld. Possible scoring of tap's best practices?
     LOGGER.info("(NotImplemented) No tests to run yet!")
 
-@click.command(name='run')
+@cli.command(name='run')
 @click.argument('tap_name')
 @click.option('--config', help='The config file for the tap.')
 @click.option('--discover', '-d', is_flag=True, help='Run discovery mode.')
@@ -75,7 +80,7 @@ def main(tap_name, config, discover, state, catalog):
         module = __import__(module_name)
     except ImportError as ex:
         # Log and exit instead of raise since this is the result of an Exception
-        LOGGER.critical("Could not import tap '%s', please ensure that the root tap module follows underscore naming conventions and is installed in this environment.\n\nExample:\n\t/\n\t\t/tap_name/__init__.py\n\t\t/setup.py", module_name)
+        LOGGER.critical("Could not import tap module '%s', please ensure that:\n- The root tap module follows underscore naming conventions\n- The tap is installed in this environment.\n\nExample (tap-foo):\n\t/\n\t/tap_foo/__init__.py\n\t/setup.py", module_name)
         sys.exit(1)
 
     tap_def = check_for_tap_in_module(module)

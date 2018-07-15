@@ -12,18 +12,18 @@ setup(name='burler',
           'singer-python==5.1.5',
           'click==6.7',
           'schema==0.6.8',
-          'voluptuous=0.11.1'
+          'voluptuous==0.11.1'
       ],
       py_modules=['burler'],
       entry_points={
         'console_scripts': [
-            'singer = burler:main',
+            'singer = burler:cli',
         ],
     },
 )
 
 # GOAL: To enable speed of review by limiting noise and being opinionated about tap structure
-# Feature (TEST): `singer spec <tap_name> <configs>` Run discovery and sync stuff, validate and look for weird things with the output! To help run in stitch!
+
 
 # Feature: stream-error ("Erroy syncing stream %s - {message}") wraps exceptions thrown from sync code
 # Feature: "Sub Stream" - See TicketAudits in tap-zendesk, needs to emit schemas in a transitive dependency-friendly way
