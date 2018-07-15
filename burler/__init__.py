@@ -56,9 +56,15 @@ def check_for_tap_in_module(module):
 def cli():
     pass
 
-@cli.command(name='verify')
+@cli.command(name='verify',
+             help="Wraps the run command with pass-through best practices verification. E.g., memory usage, output format, etc.",
+             short_help="Runs the tap with best practices verification")
+@click.argument('tap_name')
+@click.option('--config', help='The config file for the tap.')
+@click.option('--discover', '-d', is_flag=True, help='Run discovery mode.')
+@click.option('--state', help='(Optional) State file to inform sync mode.')
+@click.option('--catalog', help='(Optional) Catalog to specify streams and metadata for sync mode.')
 def verify_tap():
-    """ Wraps the run command with pass-through best practices verification. E.g., memory consumption, output format, etc. """
     # TODO: Feature (TEST): `singer test <tap_name> <configs>` Run discovery and sync stuff, validate and look for weird things with the output! To help ensure the best practices are being upheld. Possible scoring of tap's best practices?
     # This could just check for singer best practices as we have them defined, things like memory consumption, etc.
     # It should just wrap main with this kind of validation so we can generate a report at the end of it all in the Logging
@@ -67,7 +73,9 @@ def verify_tap():
     # or Like singer verify tap-foo --discover --config /tmp/tap_config.json, ?
     LOGGER.info("(NotImplemented) No tests to run yet!")
 
-@cli.command(name='run')
+@cli.command(name='run',
+             help="Runs the specified singer tap with provided options, state, catalog, and configuration.",
+             short_help="Runs the tap with the provided CLI options")
 @click.argument('tap_name')
 @click.option('--config', help='The config file for the tap.')
 @click.option('--discover', '-d', is_flag=True, help='Run discovery mode.')
@@ -75,7 +83,6 @@ def verify_tap():
 @click.option('--catalog', help='(Optional) Catalog to specify streams and metadata for sync mode.')
 @singer.utils.handle_top_exception(LOGGER)
 def main(tap_name, config, discover, state, catalog):
-    """ Runs the specified singer tap with provided options, state, catalog, and configuration. """
     # TODO: Expand to run a target and differentiate them.
     # So, the vision is that this will be called with `singer run tap-foo`
     # First, check if you can load a package with the name
