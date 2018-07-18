@@ -3,6 +3,7 @@ from burler.streams import Stream
 from burler.exceptions import TapNotDefinedException, TapRedefinedException
 
 import re
+import os
 import sys
 import click
 import singer
@@ -10,6 +11,9 @@ import singer.utils
 import singer.logger as logging
 
 LOGGER = logging.get_logger()
+
+## Entrypoint to help configure setuptools in the consuming package
+entry_point = "burler:tap_entry_point"
 
 ## Bookmark strategies - its own module
 # TODO: Not sure the best way to implement these, they should probably configure into the do_sync method, wherever that lives...
@@ -73,21 +77,7 @@ def verify_tap():
     # or Like singer verify tap-foo --discover --config /tmp/tap_config.json, ?
     LOGGER.info("(NotImplemented) No tests to run yet!")
 
-@cli.command(name='run',
-             help="Runs the specified singer tap with provided options, state, catalog, and configuration.",
-             short_help="Runs the tap with the provided CLI options")
-@click.argument('tap_name')
-@click.option('--config', help='The config file for the tap.')
-@click.option('--discover', '-d', is_flag=True, help='Run discovery mode.')
-@click.option('--state', help='(Optional) State file to inform sync mode.')
-@click.option('--catalog', help='(Optional) Catalog to specify streams and metadata for sync mode.')
-@singer.utils.handle_top_exception(LOGGER)
-def main(tap_name, config, discover, state, catalog):
-    # TODO: Expand to run a target and differentiate them.
-    # So, the vision is that this will be called with `singer run tap-foo`
-    # First, check if you can load a package with the name
-    # Check if it has an instance of tap
-    # Verify that `config` is provided and if discovery, no catalog or state, and vice versa
+def execute_tap(tap_name, config, discover, state, catalog):
     try:
         module_name = re.sub('-', '_', tap_name)
         module = __import__(module_name)
@@ -104,8 +94,27 @@ def main(tap_name, config, discover, state, catalog):
         raise TapRedefinedException("Found tap definition for module {}, but it is out of sync with Burler's tap object. Please ensure that it is not being redefined.".format(module_name))
 
     # Otherwise... lets get started!
-    # TODO: Parse config and validate w/ tap's definition
     if discover:
-        Tap.__tap.do_discover()
+        Tap.__tap.do_discover(config)
     else:
-        Tap.__tap.do_sync()
+        Tap.__tap.do_sync(config, state, catalog)
+
+@click.command()
+@click.option('--config', help='The config file for the tap.')
+@click.option('--discover', '-d', is_flag=True, help='Run discovery mode.')
+@click.option('--state', help='(Optional) State file to inform sync mode.')
+@click.option('--catalog', help='(Optional) Catalog to specify streams and metadata for sync mode.')
+def tap_entry_point(config, discover, state, catalog):
+    execute_tap(sys.argv[0].split(os.sep)[-1], config, discover, state, catalog)
+
+@cli.command(name='run',
+             help="Runs the specified singer tap with provided options, state, catalog, and configuration.",
+             short_help="Runs the tap with the provided CLI options")
+@click.argument('tap_name')
+@click.option('--config', help='The config file for the tap.')
+@click.option('--discover', '-d', is_flag=True, help='Run discovery mode.')
+@click.option('--state', help='(Optional) State file to inform sync mode.')
+@click.option('--catalog', help='(Optional) Catalog to specify streams and metadata for sync mode.')
+@singer.utils.handle_top_exception(LOGGER)
+def tap_main(tap_name, config, discover, state, catalog):
+    execute_tap(tap_name, config, discover, state, catalog)
