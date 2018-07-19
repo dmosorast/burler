@@ -3,25 +3,28 @@
 > **def.** [[1]](https://www.merriam-webster.com/dictionary/burler) plural -s
 > 1 : one that removes loose threads, knots, and other imperfections from cloth
 
-A library to help write taps in accordance with the [Singer specification](https://github.com/singer-io/getting-started).
-
+A library to help write taps in accordance with the [Singer specification](https://github.com/singer-io/getting-started) (and potentially targets if this pattern works out!)
 
 # Features
+- **Standard Command-Line Arguments** Burler will automatically load, validate, and parse command line arguments to call the functions that *you* care about.
 - **Config file validation** `tap = Tap(config_spec=spec)` - Burler supports the following methods of validating config:
-  - List Key-based inference - Takes a provided `list` of required keys and ensures that they are present
-  - Dict Key-based inference - Takes a provided `dict` and validates that *ALL* its keys are present at runtime (no optional config support)
+  - List Key-based inference - Takes a provided `list` of required keys and ensures that they are present (extra keys are passed through unchecked)
+  - Dict Key-based inference - Takes a provided `dict` and validates that *ALL* of its keys are present at runtime (extra keys are passed through unchecked)
   - [Voluptuous](https://github.com/alecthomas/voluptuous) Schema - Validates according to a voluptuous Schema object
   - [schema](https://github.com/keleshev/schema) - Validates according to a schema Schema object
   - (Coming Soon) Example Config File - Same as key-based inference, but a relative file path can be specified instead of a dict object
-- **Client configuration**
-  - You can provide a function that creates a client object from a config object with `@tap.create_client`. This will be available on the `tap` object
+- **Declarative Style** Most, if not all, configuration of a tap's components is performed via decorators. That way you can focus more on yielding records, and less on writing metrics!
 
 # Overview
-A lot of functionality provided by Burler is through decorators. This provides convenience functions or classes that configure different actions through the process of pulling data from an API. Below you will find the currently available decorators.
+Burler provides multiple conveniences that can help support the development of a tap. Some of the biggest problems to solve when creating a tap are communicating with the source, defining the schema of the data, emitting records, and bookmarking at times that make sense. The goal of Burler is to remove boilerplate, so that you, the developer, can focus on the tougher stuff.
 
-### Entry Point(s)
+To accomplish this, a lot of the Burler framework relies on decorators. This allows you to declare functions that handle smaller pieces of the process that a tap may or must go through in order to effectively extract data. Below you will find a brief overview to get you started.
 
-Including Burler in a project will provide a few different entry points to be used from the command line, as well as a convenience property to specify its entry point in a tap's `setup.py`.
+## Entry Point(s)
+
+Including Burler in a project will provide a few different entry points to be used from the command line automatically, as well as a convenience property to specify its entry point in a tap's `setup.py`.
+
+### CLI "Out of the Box"
 
 #### singer run [tap_name]
 
@@ -33,9 +36,11 @@ This can be used to run one of a variety of installed taps in the current enviro
 
 The goal of this entry point is to validate the output of a tap run, and can be used to ensure that the tap conforms to the Singer [Best Practices](https://github.com/singer-io/getting-started/blob/master/docs/BEST_PRACTICES.md#best-practices-for-building-a-singer-tap).
 
+### Convenience Property
+
 #### burler.entry_point
 
-To be used in setup.py of the tap requiring the burler package, like so:
+To be used in setup.py of the tap requiring the burler package in order to provide the familiar `tap-foo --config config.json` interface, like so:
 
 ```python
 import burler.entry_point
@@ -57,18 +62,18 @@ setup(name='tap-foo',
 )
 ```
 
-### The Tap Object, Discovery Mode, and Sync Mode
+## The Tap Object, Discovery Mode, and Sync Mode
 
 Burler adopts a pattern similar to [Flask](http://flask.pocoo.org/), where the application defines a top-level object that is the source of all other configuration.
 
 The most basic example of this is defining a function that will handle the two major modes of a tap, discovery and sync. These functions will receive parameters in the order specified in the example below.
 
-Discovery can accept a `config` object, and Sync can accept the arguments `config, state, catalog` in that order.
+Discovery can accept a `config` object, and Sync can accept the arguments `config, state, catalog`, in that order.
 
 ```python
-from burler import tap
+import burler
 
-tap = tap()
+tap = burler.tap()
 
 @tap.discovery_mode
 def do_discover(config):
@@ -79,11 +84,11 @@ def do_sync(config, state, catalog):
     # Do sync...
 ```
 
-### Client Library
+## Client Library
 
-In order to extract data from a source, many taps use a Client library. Specifying a function that will create a client library object will add it to the tap and pass it into the places where it's needed.
+In order to extract data from a source, many taps use a Client library (either custom, or written by a third party... fourth party in this case?). Decorating a function that creates a client library object in this manner will add it to the tap and pass it into the places where it's needed.
 
-***Note:*** This library currently does not need to ascribe to implement any special methods. It's just an object that is made available by the framework, and can be any object.
+***Note:*** This client object currently does not need to ascribe to any patterns or implement any special methods. It's just an object that is made available by the framework, and can be any object.
 
 ```python
 @tap.create_client

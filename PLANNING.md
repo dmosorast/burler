@@ -7,14 +7,16 @@ GOAL: To enable speed of review by limiting noise and being opinionated about ta
 - Add Stream base class
 - Add Magic sync and discovery modes that use configured Stream base classes (if they exist)
 - Add standard informational logging for starting tap, starting stream, etc.
+- Add standard metrics
+- Implement loading a sample config file from a relative path for dict-based validation (or absolute path. Why not?)
 
 # Potential Enhancements
-- Writing state messages to a file? -o --out-file option to support writing State messages to a file before emitting them? (may actually require monkey patching singer.write_message)
 - stream-error ("Erroy syncing stream %s - {message}") wraps exceptions thrown from sync code
 - "Sub Stream" - See TicketAudits in tap-zendesk, needs to emit schemas in a transitive dependency-friendly way
   - Buffer yielding for sub streams - Wrap the generator in a loop that will read until a certain amount of time has passed and then yield back to the sync loop
   - Sub stream split bookmark tracking, for dependent streams, bookmarks should roll up to each parent level above the last
-- Client library generation? - The client library concept will need more guidance. I can envision something like Client.generate([list, of, endpoints]) as a decorator and it will mark up the class with functions to make calls to the specified endpoints as POST, PUT, GET, etc. For each verb needed.
+- Client library stub generation? - The client library concept will need more guidance. I can envision something like Client.generate([list, of, endpoints]) as a decorator and it will mark up the class with functions to make calls to the specified endpoints as POST, PUT, GET, etc. For each verb needed.
+- (Perhaps with targets) Writing state messages to a file? -o --out-file option to support writing State messages to a file before emitting them? (may actually require monkey patching singer.write_message)
 
 # Brainstorming
 
@@ -78,7 +80,7 @@ def write_metadata(breadcrumb, sub_schema):
 ## Outstanding Questions
 #### Perhaps putting variable functions on "tap" doesn't make much sense
 ####     - Is it awkward to have a magical "stream" object that the decorator updates?
-####     - like `from burler import stream` then that is a reference to an object that gets modified by the decorators for use in context
+####     - like `from burler import stream` then that is a reference to an object that gets modified by the decorators for use in the enclosing function context
 #### How to do stream dependencies?
 #### Config options that support WSDLs?
 #### Credentials refresh options on the client? Like periodic(refresh_func, min=25), or one_time(refresh_func)
