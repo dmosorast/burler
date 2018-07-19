@@ -2,6 +2,8 @@
 GOAL: To enable speed of review by limiting noise and being opinionated about tap structure
 
 # Outstanding Base Features
+- Answer the question: Should discovery return the catalog? or should it write out.
+  - Returning the catalog would help add validation around it from the framework perspective. Then Burler can write it out
 - Add Stream base class
 - Add Magic sync and discovery modes that use configured Stream base classes (if they exist)
 - Add standard informational logging for starting tap, starting stream, etc.
