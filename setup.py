@@ -21,19 +21,3 @@ setup(name='burler',
         ],
     },
 )
-
-# GOAL: To enable speed of review by limiting noise and being opinionated about tap structure
-# BASE TODOS:
-# TODO: Add standard logging for starting tap
-# TODO: Add Stream base class
-# TODO: Add Magic sync and discovery modes that use configured Stream base classes (if they exist)
-
-# FEATURES:
-# Feature: (overall) -o --out-file option to support writing State messages to a file before emitting them? (not sure how this can plug in without monkey patching singer.write_message
-
-# Feature: stream-error ("Erroy syncing stream %s - {message}") wraps exceptions thrown from sync code
-# Feature: "Sub Stream" - See TicketAudits in tap-zendesk, needs to emit schemas in a transitive dependency-friendly way
-# Feature: Buffer yielding for sub streams - Wrap the generator in a loop that will read until a certain amount of time has passed and then yield back to the sync loop
-# Feature: Sub stream split bookmark tracking, for dependent streams, bookmarks should roll up to each parent level above the last
-
-# Feature: Client library generation? - The client library concept will need more guidance. I can envision something like Client.generate([list, of, endpoints]) as a decorator and it will mark up the class with functions to make calls to the specified endpoints as POST, PUT, GET, etc. For each verb needed.
