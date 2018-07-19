@@ -5,10 +5,13 @@ from burler.exceptions import TapNotDefinedException, TapRedefinedException
 import re
 import os
 import sys
+import json
 import click
 import singer
 import singer.utils
 import singer.logger as logging
+from singer.catalog import Catalog
+from singer.utils import load_json
 
 LOGGER = logging.get_logger()
 
@@ -77,6 +80,7 @@ def verify_tap():
     # or Like singer verify tap-foo --discover --config /tmp/tap_config.json, ?
     LOGGER.info("(NotImplemented) No tests to run yet!")
 
+@singer.utils.handle_top_exception(LOGGER)
 def execute_tap(tap_name, config, discover, state, catalog):
     try:
         module_name = re.sub('-', '_', tap_name)
@@ -93,11 +97,21 @@ def execute_tap(tap_name, config, discover, state, catalog):
     if tap_def is not Tap.__tap:
         raise TapRedefinedException("Found tap definition for module {}, but it is out of sync with Burler's tap object. Please ensure that it is not being redefined.".format(module_name))
 
+    config_json = load_json(config)
+
     # Otherwise... lets get started!
     if discover:
-        Tap.__tap.do_discover(config)
+        Tap.__tap.do_discover(config_json)
     else:
-        Tap.__tap.do_sync(config, state, catalog)
+        if state is not None:
+            state = load_json(state)
+        else:
+            state = {}
+
+        if catalog is not None:
+            catalog = Catalog.load(catalog)
+
+        Tap.__tap.do_sync(config_json, state, catalog)
 
 @click.command()
 @click.option('--config', help='The config file for the tap.')
@@ -115,6 +129,5 @@ def tap_entry_point(config, discover, state, catalog):
 @click.option('--discover', '-d', is_flag=True, help='Run discovery mode.')
 @click.option('--state', help='(Optional) State file to inform sync mode.')
 @click.option('--catalog', help='(Optional) Catalog to specify streams and metadata for sync mode.')
-@singer.utils.handle_top_exception(LOGGER)
 def tap_main(tap_name, config, discover, state, catalog):
     execute_tap(tap_name, config, discover, state, catalog)

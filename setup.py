@@ -23,6 +23,12 @@ setup(name='burler',
 )
 
 # GOAL: To enable speed of review by limiting noise and being opinionated about tap structure
+# BASE TODOS:
+# TODO: Add standard logging for starting tap
+# TODO: Add Stream base class
+# TODO: Add Magic sync and discovery modes that use configured Stream base classes (if they exist)
+
+# FEATURES:
 # Feature: (overall) -o --out-file option to support writing State messages to a file before emitting them? (not sure how this can plug in without monkey patching singer.write_message
 
 # Feature: stream-error ("Erroy syncing stream %s - {message}") wraps exceptions thrown from sync code
