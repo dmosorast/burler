@@ -7,7 +7,7 @@ A library to help write taps in accordance with the [Singer specification](https
 
 # Features
 - **Standard Command-Line Arguments** Burler will automatically load, validate, and parse command line arguments to call the functions that *you* care about.
-- **Config file validation** `tap = Tap(config_spec=spec)` - Burler supports the following methods of validating config:
+- **Config file validation** `tap = burler.tap(config_spec=spec)` - Burler supports the following methods of validating config:
   - List Key-based inference - Takes a provided `list` of required keys and ensures that they are present (extra keys are passed through unchecked)
   - Dict Key-based inference - Takes a provided `dict` and validates that *ALL* of its keys are present at runtime (extra keys are passed through unchecked)
   - [Voluptuous](https://github.com/alecthomas/voluptuous) Schema - Validates according to a voluptuous Schema object
@@ -22,7 +22,7 @@ To accomplish this, a lot of the Burler framework relies on decorators. This all
 
 ## Entry Point(s)
 
-Including Burler in a project will provide a few different entry points to be used from the command line automatically, as well as a convenience property to specify its entry point in a tap's `setup.py`.
+Including Burler in a project will provide a few different entry points to be used from the command line automatically, as well as a convenience property to specify *its* entry point in a tap's `setup.py`.
 
 ### CLI "Out of the Box"
 
@@ -95,4 +95,7 @@ In order to extract data from a source, many taps use a Client library (either c
 def client(config):
     token = config["access_token"]
     return FooClient(token)
+
+def some_function():
+    tap.client.make_foo_request()
 ```
