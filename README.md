@@ -99,3 +99,36 @@ def client(config):
 def some_function():
     tap.client.make_foo_request()
 ```
+
+## Defining Streams
+
+There are two methods which you can use to define the available streams for a tap:
+- Class Inheritance
+- Decorator Pattern
+
+### Class Inheritance
+
+Burler provides a base class for streams which will transparently register the subclass as a stream with the `Tap` object. This is the most straightforward method for declaring a stream. Its "table name" that will be used to emit records will be a normalized string from the standard Python `PascalCase` for class names to `snake_case`.
+
+```
+TODO: The sub-class is expected to implement a few different methods and properties in order for the sync to succeed. Methods: sync, get_schema, load_metadata, get_bookmark (if applicable), update_bookmark (if applicable). Properties: name, replication_method, replication_key, key_properties (primary keys)
+```
+
+Here is an example of using this method:
+
+```python
+TODO
+```
+
+### Decorator Pattern
+TODO
+
+### Multiple Streams Per-Class
+TODO: This might actually just end up being "since decorators are just functions, you can call the decorator in a list comprehension to define multiple streams with the same class"
+
+## Credits
+
+Thanks to these folks for the input, and inspiration:
+
+**Armin Ronacher and the Flask contributors** for the inspiration of using decorators this way.
+**Jake Stein** for the suggestion that led to a `verify` concept

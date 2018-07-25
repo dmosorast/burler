@@ -12,6 +12,7 @@ LOGGER = logging.get_logger()
 class Tap:
     __tap = None
 
+    streams = {}
     debug_mode = False
     config = None
     requires_config = True

@@ -21,6 +21,9 @@ entry_point = "burler:tap_entry_point"
 TAP_ROOT = None
 
 def tap(config_spec=None):
+    if Tap.__tap is not None:
+        raise TapRedefinedException("Attempting to redefine the global Tap object. This is not recommended to maintain a consistent state.")
+
     Tap.__tap = Tap(config_spec)
 
     return Tap.__tap

@@ -5,18 +5,21 @@ GOAL: To enable speed of review by limiting noise and being opinionated about ta
 - Answer the question: Should discovery return the catalog? or should it write out.
   - Returning the catalog would help add validation around it from the framework perspective. Then Burler can write it out
 - Add Stream base class
+  - Constants for replication method (Full Table, Key-Based Incremental, etc.)
 - Add Magic sync and discovery modes that use configured Stream base classes (if they exist)
 - Add standard informational logging for starting tap, starting stream, etc.
 - Add standard metrics
 - Implement loading a sample config file from a relative path for dict-based validation (or absolute path. Why not?)
 
 # Potential Enhancements
+- Different types of abstractions (database use cases, bulk api, csv export?, variable stream types [specify multiple streams per class])
 - stream-error ("Erroy syncing stream %s - {message}") wraps exceptions thrown from sync code
 - "Sub Stream" - See TicketAudits in tap-zendesk, needs to emit schemas in a transitive dependency-friendly way
   - Buffer yielding for sub streams - Wrap the generator in a loop that will read until a certain amount of time has passed and then yield back to the sync loop
   - Sub stream split bookmark tracking, for dependent streams, bookmarks should roll up to each parent level above the last
 - Client library stub generation? - The client library concept will need more guidance. I can envision something like Client.generate([list, of, endpoints]) as a decorator and it will mark up the class with functions to make calls to the specified endpoints as POST, PUT, GET, etc. For each verb needed.
 - (Perhaps with targets) Writing state messages to a file? -o --out-file option to support writing State messages to a file before emitting them? (may actually require monkey patching singer.write_message)
+  - Should also merge the state messages to a single record to be used in the next run
 
 # Brainstorming
 
