@@ -18,30 +18,7 @@ LOGGER = logging.get_logger()
 ## Entrypoint to help configure setuptools in the consuming package
 entry_point = "burler:tap_entry_point"
 
-## Bookmark strategies - its own module
-# TODO: Not sure the best way to implement these, they should probably configure into the do_sync method, wherever that lives...
-end_of_sync = "END_OF_SYNC"
-
-def every_n(record_count):
-    def emit_bookmark():
-        # check count of records emitted, if time to emit, write a bookmark with state
-        pass
-    return emit_bookmark
-
-## Schema Types - its own module "from burler import tap, stream, bookmark, schema"
-def json_file(filepath):
-    def get_schema():
-        # OS magic to determine if filepath is relative or absolute
-        with open(filepath, "r") as f:
-            return json.load(f)
-    return get_schema
-
-def wsdl(url=None):
-    def get_schema():
-        # SOAP magic to get a schema from a WSDL
-        client = _tap.client
-        return {}
-    return get_schema
+TAP_ROOT = None
 
 def tap(config_spec=None):
     Tap.__tap = Tap(config_spec)
@@ -96,6 +73,9 @@ def execute_tap(tap_name, config, discover, state, catalog):
 
     if tap_def is not Tap.__tap:
         raise TapRedefinedException("Found tap definition for module {}, but it is out of sync with Burler's tap object. Please ensure that it is not being redefined.".format(module_name))
+
+    TAP_ROOT = str.join(os.sep, module.__file__.split(os.sep)[:-1])
+    os.chdir(TAP_ROOT)
 
     config_json = load_json(config)
 
