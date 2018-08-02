@@ -21,3 +21,5 @@ class TestStreamMetaClass(TestCase):
         @stream("test_stream", tap_stream_id="contacts")
         class TestStream():
             pass
+        self.assertIn("invoices", Tap.streams)
+        self.assertIn("contacts", Tap.streams)
