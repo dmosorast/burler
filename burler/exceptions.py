@@ -24,3 +24,7 @@ class NoClientConfigured(BurlerException):
 # schema_types.py
 class NoWSDLLocationSpecified(BurlerException):
     pass
+
+# streams.py
+class DuplicateStream(BurlerException):
+    pass
