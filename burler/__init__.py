@@ -20,13 +20,18 @@ entry_point = "burler:tap_entry_point"
 
 TAP_ROOT = None
 
+def get_tap():
+    # Accessing namespaced private member outside of class, must be prefixed with class name
+    return Tap._Tap__tap
+
 def tap(config_spec=None):
-    if Tap.__tap is not None:
+    current_tap = get_tap()
+    if current_tap is not None:
         raise TapRedefinedException("Attempting to redefine the global Tap object. This is not recommended to maintain a consistent state.")
 
-    Tap.__tap = Tap(config_spec)
+    Tap._Tap__tap = Tap(config_spec)
 
-    return Tap.__tap
+    return get_tap()
 
 def check_for_tap_in_module(module):
     # Find the tap object definition for this (it should be created since we imported it
@@ -74,17 +79,18 @@ def execute_tap(tap_name, config, discover, state, catalog):
     if tap_def is None:
         raise TapNotDefinedException("Could not find an instance of Tap in module '{}'. Please ensure that it is defined at the top level module of the tap. (__init__.py or {}.py)".format(module_name, module_name))
 
-    if tap_def is not Tap.__tap:
+    current_tap = get_tap()
+    if tap_def is not current_tap:
         raise TapRedefinedException("Found tap definition for module {}, but it is out of sync with Burler's tap object. Please ensure that it is not being redefined.".format(module_name))
 
     TAP_ROOT = str.join(os.sep, module.__file__.split(os.sep)[:-1])
-    os.chdir(TAP_ROOT)
+    #os.chdir(TAP_ROOT)
 
     config_json = load_json(config)
 
     # Otherwise... lets get started!
     if discover:
-        Tap.__tap.do_discover(config_json)
+        current_tap.do_discover(config_json)
     else:
         if state is not None:
             state = load_json(state)
@@ -94,7 +100,7 @@ def execute_tap(tap_name, config, discover, state, catalog):
         if catalog is not None:
             catalog = Catalog.load(catalog)
 
-        Tap.__tap.do_sync(config_json, state, catalog)
+        current_tap.do_sync(config_json, state, catalog)
 
 @click.command()
 @click.option('--config', help='The config file for the tap.')

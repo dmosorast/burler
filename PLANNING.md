@@ -7,6 +7,8 @@ GOAL: To enable speed of review by limiting noise and being opinionated about ta
 - Add Stream base class
   - Constants for replication method (Full Table, Key-Based Incremental, etc.)
 - Add Magic sync and discovery modes that use configured Stream base classes (if they exist)
+  - On the topic of context, the sync functions for a stream can be wrapped in a decorator that wraps the return value in a tuple of (Stream, data) for interleaving streams
+  - Needs to write and read "currently-syncing" state value (for sub-streams, should handle parent/sub level)
 - Add standard informational logging for starting tap, starting stream, etc.
 - Add standard metrics
 - Implement loading a sample config file from a relative path for dict-based validation (or absolute path. Why not?)
@@ -20,6 +22,9 @@ GOAL: To enable speed of review by limiting noise and being opinionated about ta
 - Client library stub generation? - The client library concept will need more guidance. I can envision something like Client.generate([list, of, endpoints]) as a decorator and it will mark up the class with functions to make calls to the specified endpoints as POST, PUT, GET, etc. For each verb needed.
 - (Perhaps with targets) Writing state messages to a file? -o --out-file option to support writing State messages to a file before emitting them? (may actually require monkey patching singer.write_message)
   - Should also merge the state messages to a single record to be used in the next run
+- Retry sync? Function to restart the sync for a stream from the original bookmark, or with a current bookmark override.
+  - E.g., when tap-zuora fails on a 404 to retry the original sync instead of bombing out
+- Retry with backoff on sync requests? or the ability to specify it? (might be best to just leave it up to the user)
 
 # Brainstorming
 
@@ -79,6 +84,22 @@ def write_metadata(breadcrumb, sub_schema):
         tap.write_metadata("inclusion", "available")
     if breadcrumb.name in tap.key_properties: # In practice, inclusion automatic should be handled already
         tap.write_metadata("inclusion", "automatic")
+
+-- OR --
+
+# Have convenience methods for standard keys, e.g., inclusion, selected, etc.
+class Inclusion():
+    def automatic(self):
+        pass
+    def unsupported(self):
+        pass
+    def available(self):
+        pass # default if not called
+
+class FieldMetadata():
+    inclusion =
+schema_field.inclusion.automatic # Property that writes the metadata in context
+
 
 ## Outstanding Questions
 #### Perhaps putting variable functions on "tap" doesn't make much sense
