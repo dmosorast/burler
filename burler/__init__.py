@@ -24,12 +24,12 @@ def get_tap():
     # Accessing namespaced private member outside of class, must be prefixed with class name
     return Tap._Tap__tap
 
-def tap(config_spec=None):
+def tap(**kwargs):
     current_tap = get_tap()
     if current_tap is not None:
         raise TapRedefinedException("Attempting to redefine the global Tap object. This is not recommended to maintain a consistent state.")
 
-    Tap._Tap__tap = Tap(config_spec)
+    Tap._Tap__tap = Tap(**kwargs)
 
     return get_tap()
 
@@ -71,9 +71,12 @@ def execute_tap(tap_name, config, discover, state, catalog):
         module_name = re.sub('-', '_', tap_name)
         module = __import__(module_name)
     except ImportError as ex:
-        # Log and exit instead of raise since this is the result of an Exception
-        LOGGER.critical("Could not import tap module '%s', please ensure that:\n- The root tap module follows underscore naming conventions\n- The tap is installed in this environment.\n\nExample (tap-foo):\n\t/\n\t/tap_foo/__init__.py\n\t/setup.py", module_name)
-        sys.exit(1)
+        if module_name in ex.msg:
+            # Log and exit instead of raise since this is the result of an Exception
+            LOGGER.critical("Could not import tap module '%s', please ensure that:\n- The root tap module follows underscore naming conventions\n- The tap is installed in this environment.\n\nExample (tap-foo):\n\t/\n\t/tap_foo/__init__.py\n\t/setup.py", module_name)
+            sys.exit(1)
+        else:
+            raise
 
     tap_def = check_for_tap_in_module(module)
     if tap_def is None:
@@ -86,7 +89,9 @@ def execute_tap(tap_name, config, discover, state, catalog):
     TAP_ROOT = str.join(os.sep, module.__file__.split(os.sep)[:-1])
     #os.chdir(TAP_ROOT)
 
-    config_json = load_json(config)
+    config_json = None
+    if config is not None:
+        config_json = load_json(config)
 
     # Otherwise... lets get started!
     if discover:
