@@ -2,16 +2,20 @@
 GOAL: To enable speed of review by limiting noise and being opinionated about tap structure
 
 # Outstanding Base Features
-- Answer the question: Should discovery return the catalog? or should it write out.
-  - Returning the catalog would help add validation around it from the framework perspective. Then Burler can write it out
+X Answer the question: Should discovery return the catalog? or should it write out.
+  X Returning the catalog would help add validation around it from the framework perspective. Then Burler can write it out
+  X Answer: The discovery mode should just write it out to std out, for migration step.
 - Add Stream base class
   - Constants for replication method (Full Table, Key-Based Incremental, etc.)
+  - Load streams from module? To be used in place of "from tap.streams import *" in the root file
 - Add Magic sync and discovery modes that use configured Stream base classes (if they exist)
   - On the topic of context, the sync functions for a stream can be wrapped in a decorator that wraps the return value in a tuple of (Stream, data) for interleaving streams
   - Needs to write and read "currently-syncing" state value (for sub-streams, should handle parent/sub level)
+- Add the ability to specify a post-transform-hook (a la adwords)
 - Add standard informational logging for starting tap, starting stream, etc.
 - Add standard metrics
 - Implement loading a sample config file from a relative path for dict-based validation (or absolute path. Why not?)
+- Run all streams if possible, catch errors and fail with "CRITICAL stream: error" at the end
 
 # Potential Enhancements
 - Different types of abstractions (database use cases, bulk api, csv export?, variable stream types [specify multiple streams per class])
