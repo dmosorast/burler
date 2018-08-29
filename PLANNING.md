@@ -11,6 +11,7 @@ X Answer the question: Should discovery return the catalog? or should it write o
 - Add Magic sync and discovery modes that use configured Stream base classes (if they exist)
   - On the topic of context, the sync functions for a stream can be wrapped in a decorator that wraps the return value in a tuple of (Stream, data) for interleaving streams
   - Needs to write and read "currently-syncing" state value (for sub-streams, should handle parent/sub level)
+- Field Selection Information for free! (require primary keys, emit available metadata, allow it to be overriden for unsupported, and filter records on sync!)
 - Add the ability to specify a post-transform-hook (a la adwords)
 - Add standard informational logging for starting tap, starting stream, etc.
 - Add standard metrics
@@ -19,6 +20,7 @@ X Answer the question: Should discovery return the catalog? or should it write o
 
 # Potential Enhancements
 - Different types of abstractions (database use cases, bulk api, csv export?, variable stream types [specify multiple streams per class])
+  - "For thing" sync mode. e.g., "function that returns list of accounts" -> "for each account, call sync"
 - stream-error ("Erroy syncing stream %s - {message}") wraps exceptions thrown from sync code
 - "Sub Stream" - See TicketAudits in tap-zendesk, needs to emit schemas in a transitive dependency-friendly way
   - Buffer yielding for sub streams - Wrap the generator in a loop that will read until a certain amount of time has passed and then yield back to the sync loop
