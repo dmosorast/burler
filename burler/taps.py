@@ -257,7 +257,13 @@ class Tap:
         LOGGER.info("Finished sync")
 
     def do_sync(self, config, catalog, state):
-        """ Main entrypoint for sync mode. """
+        """
+        Main entrypoint for sync mode.
+
+        If a sync mode function is declared with the decorator, it will receive a catalog with all streams that do not have classes defined.
+        If a stream class is registered for a tap_stream_id, it will be executed according to the class's members.
+        If both are defined, the Stream class takes precedence. This is to help partial migration.
+        """
         self.validate_config(config)
         self.config = config
 
@@ -266,6 +272,7 @@ class Tap:
 
         if self._sync_override:
             LOGGER.info("Found decorated sync method, running sync mode...")
+            # TODO: Is it confusing to modify the catalog? If a stream class is registered, it should take precedence, I think
             non_registered_catalog = {'streams': [s for s in catalog['streams'] if stream.tap_stream_id in self.streams]}
             self._sync(config, non_registered_catalog, state)
 
