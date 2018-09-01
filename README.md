@@ -38,12 +38,14 @@ The goal of this entry point is to validate the output of a tap run, and can be 
 
 ### Convenience Property
 
+***Setup:*** By installing burler globally, or in your virtual environment outside of the tap's installation process, you can use it as a setup helper.
+
 #### burler.entry_point
 
 To be used in setup.py of the tap requiring the burler package in order to provide the familiar `tap-foo --config config.json` interface, like so:
 
 ```python
-import burler.entry_point
+import burler
 from setuptools import setup
 
 setup(name='tap-foo',
@@ -53,11 +55,10 @@ setup(name='tap-foo',
           'burler==0.0.1',
           ...
       ],
-      entry_points = {
-          'console_scripts': [
-              'tap-foo = ' + burler.entry_point
-          ]
-      },
+      entry_points = '''
+          [console_scripts]
+          tap-foo={}
+      '''.format(burler.entry_point),
 ...
 )
 ```
@@ -68,7 +69,17 @@ Burler adopts a pattern similar to [Flask](http://flask.pocoo.org/), where the a
 
 The most basic example of this is defining a function that will handle the two major modes of a tap, discovery and sync. These functions will receive parameters in the order specified in the example below.
 
-Discovery can accept a `config` object, and Sync can accept the arguments `config, state, catalog`, in that order.
+***Discovery:***
+
+- Discovery can accept a `config` object. 
+- Discovery **must** return the catalog that was discovered (See the [Singer Getting Started Guide](https://github.com/singer-io/getting-started/blob/master/docs/DISCOVERY_MODE.md#the-catalog) for more info on the Catalog).
+
+***Sync:***
+
+- Sync can accept the arguments `config, catalog, state`, in that order.
+- Sync is not required to return any value.
+
+***Example:***
 
 ```python
 import burler
@@ -80,15 +91,19 @@ def do_discover(config):
     # Do discovery...
 
 @tap.sync_mode
-def do_sync(config, state, catalog):
+def do_sync(config, catalog, state):
     # Do sync...
 ```
 
 ## Client Library
 
-In order to extract data from a source, many taps use a Client library (either custom, or written by a third party... fourth party in this case?). Decorating a function that creates a client library object in this manner will add it to the tap and pass it into the places where it's needed.
+In order to extract data from a source, many taps use a Client library (either custom, or written by a third party... fourth party in this case?). Decorating a function that creates a client library object in this manner will add it to the tap object and make it available in the places where it's needed.
 
-***Note:*** This client object currently does not need to ascribe to any patterns or implement any special methods. It's just an object that is made available by the framework, and can be any object.
+***Note:***
+- Burler treats the `tap.client` property as a singleton, and, as such, this function will only be called once.
+- This client object currently does not need to ascribe to any patterns or implement any special methods. It's just an object that is made available by the framework, and can be any object.
+
+***Example:***
 
 ```python
 @tap.create_client
@@ -111,7 +126,9 @@ There are two methods which you can use to define the available streams for a ta
 Burler provides a base class for streams which will transparently register the subclass as a stream with the `Tap` object. This is the most straightforward method for declaring a stream. Its "table name" that will be used to emit records will be a normalized string from the standard Python `PascalCase` for class names to `snake_case`.
 
 ```
-TODO: The sub-class is expected to implement a few different methods and properties in order for the sync to succeed. Methods: sync, get_schema, load_metadata, get_bookmark (if applicable), update_bookmark (if applicable). Properties: name, replication_method, replication_key, key_properties (primary keys)
+TODO: The sub-class is expected to implement a few different methods and properties in order for the sync to succeed.
+Methods: sync, get_schema, load_metadata, get_bookmark (if applicable), update_bookmark (if applicable).
+Properties: name, replication_method, replication_key, key_properties (primary keys)
 ```
 
 Here is an example of using this method:
@@ -124,11 +141,4 @@ TODO
 TODO
 
 ### Multiple Streams Per-Class
-TODO: This might actually just end up being "since decorators are just functions, you can call the decorator in a list comprehension to define multiple streams with the same class"
-
-## Credits
-
-Thanks to these folks for the input, and inspiration:
-
-**Armin Ronacher and the Flask contributors** for the inspiration of using decorators this way.
-**Jake Stein** for the suggestion that led to a `verify` concept
+TODO: This might actually just end up being "since decorators are just functions, you can call the decorator in a list comprehension to define multiple streams with the same class" + example

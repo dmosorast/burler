@@ -5,7 +5,7 @@ GOAL: To enable speed of review by limiting noise and being opinionated about ta
 X Answer the question: Should discovery return the catalog? or should it write out.
   X Returning the catalog would help add validation around it from the framework perspective. Then Burler can write it out
   X Answer: The discovery mode should just write it out to std out, for migration step.
-- Add Stream base class
+X Add Stream base class
   - Constants for replication method (Full Table, Key-Based Incremental, etc.)
   - Load streams from module? To be used in place of "from tap.streams import *" in the root file
 - Add Magic sync and discovery modes that use configured Stream base classes (if they exist)

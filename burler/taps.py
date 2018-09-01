@@ -131,7 +131,7 @@ class Tap:
         # TODO: How to check if discovery mode is not available? If no load_schema or load_metadata appear on any of the classes?
         self.__discover_using_registered_streams(config)
 
-    def __sync_using_registered_streams(self, config, state, catalog):
+    def __sync_using_registered_streams(self, config, catalog, state):
         def process_record(record):
             """ Serializes data into Python objects via custom encoder. """
             if self.json_encoder:
@@ -191,7 +191,7 @@ class Tap:
         singer.write_state(state)
         LOGGER.info("Finished sync")
 
-    def do_sync(self, config, state, catalog):
+    def do_sync(self, config, catalog, state):
         """ Main entrypoint for sync mode. """
         self.validate_config(config)
         self.config = config
@@ -204,7 +204,7 @@ class Tap:
             self._sync(config, state, catalog)
             return
 
-        self.__sync_using_registered_streams(config, state, catalog)
+        self.__sync_using_registered_streams(config, catalog, state)
 
     # Tap decorators
     def discovery_mode(self, func):

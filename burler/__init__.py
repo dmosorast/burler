@@ -105,7 +105,7 @@ def execute_tap(tap_name, config, discover, state, catalog):
         if catalog is not None:
             catalog = Catalog.load(catalog)
 
-        current_tap.do_sync(config_json, state, catalog)
+        current_tap.do_sync(config_json, catalog, state)
 
 @click.command()
 @click.option('--config', help='The config file for the tap.')
