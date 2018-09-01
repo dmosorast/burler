@@ -219,7 +219,9 @@ class Tap:
 
             LOGGER.info("%s: Starting sync", stream_name)
             # Refactor Note: Start of stream sync
-            smd = self.streams[stream.tap_stream_id]
+            smd = self.streams.get(stream.tap_stream_id)
+            if smd is None:
+                continue # We want to allow both a sync decorator and registered streams
             instance = smd.cls()
             smd.set_context(instance)
 
@@ -264,8 +266,8 @@ class Tap:
 
         if self._sync_override:
             LOGGER.info("Found decorated sync method, running sync mode...")
-            self._sync(config, state, catalog)
-            return
+            non_registered_catalog = {'streams': [s for s in catalog['streams'] if stream.tap_stream_id in self.streams]}
+            self._sync(config, non_registered_catalog, state)
 
         self.__sync_using_registered_streams(config, catalog, state)
 
