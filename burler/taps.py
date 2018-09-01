@@ -27,10 +27,9 @@ class Tap:
 
     _discovery_override = False
     _sync_override = False
-    _validate = lambda c: self.log_debug(LOGGER.warn, "No configuration spec provided, skipping further validation...") or c # Returns c
-    # TODO: Check if discovery is required with a class function
-    _discover = lambda _: self.log_debug(LOGGER.warn, "No discovery mode specified. If needed, define one with the decorator @tap.discovery_mode, skipping discovery")
-    _sync = lambda _1, _2, _3: self._raise(SyncModeNotDefined, "No sync mode specified, please define one with the decorator @tap.sync_mode")
+    _validate = lambda c: self.log_if_debug(LOGGER.warn, "No configuration spec provided, skipping further validation...") or c # Returns c
+    # TODO: Is this necessary anymore? I think it'll just figure it out and sync no streams? Maybe warn on that.
+    _sync = lambda _1, _2, _3: self._raise(SyncModeNotDefined, "No sync mode specified, please define one with the decorator @tap.sync_mode, declaring streams with subclassing burler.streams.Stream, or by declaring streams with the class decorator @burler.streams.stream")
 
     def _log_if_debug(self, log_func, message):
         if self.debug_mode:
@@ -104,32 +103,96 @@ class Tap:
 
         self.debug_mode = debug
 
-    def __discover_using_registered_streams(self, config):
-        LOGGER.info("Starting discover")
+    def _write_default_metadata(self, schema, mdata, instance = None):
+        def safe_write_md(md, bc, k, v):
+            return metadata.write(md, bc, k, v) if metadata.get(md, bc, k) is None else md
 
+        if instance is None:
+            instance = object()
+
+        # Handle primary keys
+        key_properties = getattr(instance, 'key_properties', None) or []
+        mdata = safe_write_md(mdata, (), 'table-key-properties', key_properties)
+
+        # Check for declared replication keys
+        replication_key = getattr(instance, 'replication_key', None)
+        if isinstance(replication_key, str):
+            replication_keys = [replication_key]
+        else:
+            try:
+                replication_keys = list(getattr(instance, 'replication_keys', None))
+            except:
+                replication_keys = []
+        mdata = safe_write_md(mdata, (), 'valid-replication-keys', replication_keys)
+
+        # Handle default replication method
+        replication_method = getattr(instance, 'replication_method', None)
+        if not replication_method:
+            replication_method = 'INCREMENTAL' if any(replication_keys) else 'FULL_TABLE'
+        mdata = safe_write_md(mdata, (), 'forced-replication-method', replication_method)
+
+        # Write table/field selection if we can
+        for field_name in schema['properties'].keys():
+            if field_name in key_properties or field_name in replication_keys:
+                mdata = safe_write_md(mdata, ('properties', field_name), 'inclusion', 'automatic')
+            else:
+                mdata = safe_write_md(mdata, ('properties', field_name), 'inclusion', 'available')
+        mdata = safe_write_md(mdata, (), 'inclusion', 'available')
+
+        return metadata.to_list(mdata)
+
+    def __discover_using_registered_streams(self, config):
         streams = []
-        for smd in self.streams.values(): # s is StreamMetadata
+        for smd in self.streams.values(): # smd is StreamMetadata
             instance = smd.cls()
             smd.set_context(instance)
-            # TODO: Check to see that load_schema and load_metadata are specified on these classes
-            streams.append({'stream': smd.display_name(), 'tap_stream_id': smd.unique_name(), 'schema': instance.load_schema(), 'metadata': instance.load_metadata()})
+
+            if not callable(getattr(instance, 'load_schema', None)):
+                instance.load_schema = lambda: {}
+            if not callable(getattr(instance, 'load_metadata', None)):
+                instance.load_metadata = lambda _, _: metadata.new()
+            schema = instance.load_schema()
+            streams.append({'stream': smd.display_name(),
+                            'tap_stream_id': smd.unique_name(),
+                            'schema': schema,
+                            'metadata': self._write_default_metadata(schema,
+                                                                     instance.load_metadata(schema),
+                                                                     instance = instance)})
 
         catalog = {"streams": streams}
-        json.dump(catalog, sys.stdout, indent=2)
-        LOGGER.info("Finished discover")
+        return catalog
 
     def do_discover(self, config):
-        """ Main entrypoint for discovery mode. """
+        """
+        Main entrypoint for discovery mode.
+
+        If @tap.discovery_mode is defined, it will be run first and its streams will be merged into the final catalog.
+        If Stream classes have been registered, their collective catalog will be merged into the final catalog.
+        All catalogs will have their metadata populated either by the registered methods, or with default values to support field selection (if possible).
+        """
         self.validate_config(config)
         self.config = config
 
+        LOGGER.info("Starting discover")
+
+        catalog = {'streams':[]}
         if self._discovery_override:
             LOGGER.info("Found decorated discovery method, running discovery mode...")
-            self._discover(config)
-            return
+            decorator_catalog = self._discover(config)
+            # Validate metadata, write "available" and "automatic" metadata if not provided, etc
+            for stream in decorator_catalog.get('streams', []):
+                stream['metadata'] = self._write_default_metadata(stream['schema'], stream['metadata'])
+            catalog['streams'].extend(decorator_catalog.get('streams', []))
 
-        # TODO: How to check if discovery mode is not available? If no load_schema or load_metadata appear on any of the classes?
-        self.__discover_using_registered_streams(config)
+        registered_catalog = self.__discover_using_registered_streams(config)
+        catalog['streams'].extend(registered_catalog.get('streams', []))
+
+        if not catalog['streams']:
+            self.log_if_debug(LOGGER.warn, "No streams found for discovery mode. Either override discovery behavior with the decorator @tap.discovery_mode and ensure it's returning a proper catalog, or by registering Stream classes.")
+
+        LOGGER.info("Finished discover")
+
+        json.dump(catalog, sys.stdout, indent=2)
 
     def __sync_using_registered_streams(self, config, catalog, state):
         def process_record(record):

@@ -28,7 +28,7 @@ Including Burler in a project will provide a few different entry points to be us
 
 #### singer run [tap_name]
 
-This can be used to run one of a variety of installed taps in the current environment. 
+This can be used to run one of a variety of installed taps in the current environment.
 
 #### singer verify [tap_name]
 
@@ -71,7 +71,7 @@ The most basic example of this is defining a function that will handle the two m
 
 ***Discovery:***
 
-- Discovery can accept a `config` object. 
+- Discovery can accept a `config` object.
 - Discovery **must** return the catalog that was discovered (See the [Singer Getting Started Guide](https://github.com/singer-io/getting-started/blob/master/docs/DISCOVERY_MODE.md#the-catalog) for more info on the Catalog).
 
 ***Sync:***
@@ -128,7 +128,9 @@ Burler provides a base class for streams which will transparently register the s
 ```
 TODO: The sub-class is expected to implement a few different methods and properties in order for the sync to succeed.
 Methods: sync, get_schema, load_metadata, get_bookmark (if applicable), update_bookmark (if applicable).
-Properties: name, replication_method, replication_key, key_properties (primary keys)
+
+load_metadata(self, schema) -> mdata (compiled metadata object, NOT .to_list())
+Properties: name, replication_method, replication_key or replication_keys (must be a list), key_properties (primary keys)
 ```
 
 Here is an example of using this method:
