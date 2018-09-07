@@ -1,36 +1,41 @@
 # Overall
 GOAL: To enable speed of review by limiting noise and being opinionated about tap structure
 
+# Test Tap Ideas
+- Monday.com - https://developers.monday.com/
+  - Been seeing their ads on youtube, so might be nice to have
+
 # Outstanding Base Features
-X Answer the question: Should discovery return the catalog? or should it write out.
-  X Returning the catalog would help add validation around it from the framework perspective. Then Burler can write it out
-  X Answer: The discovery mode should just write it out to std out, for migration step.
+- (Architecture) Refactor out CLI
 X Add Stream base class
-  - Constants for replication method (Full Table, Key-Based Incremental, etc.)
-  - Load streams from module? To be used in place of "from tap.streams import *" in the root file
-- Add Magic sync and discovery modes that use configured Stream base classes (if they exist)
-  - On the topic of context, the sync functions for a stream can be wrapped in a decorator that wraps the return value in a tuple of (Stream, data) for interleaving streams
+  - (Sync Feature) Constants for replication method (Full Table, Key-Based Incremental, etc.)
+  - (Architecture) Load streams from module? To be used in place of "from tap.streams import *" in the root file
+- (Sync Feature) Add the ability to specify a post-transform-hook (a la adwords)
+- (Logging) Add standard informational logging for starting tap, starting stream, etc.
+- (Metrics) Add standard metrics
+- (Config Spec) Implement loading a sample config file from a relative path for dict-based validation (or absolute path. Why not?)
+- (Config Spec) Allow passing in a validation function that will throw if invalid
+- Error Handling: Run all streams if possible, catch errors and fail with "CRITICAL stream: error" at the end
+  - stream-error ("Erroy syncing stream %s - {message}") wraps exceptions thrown from sync code
+- (Architecture) "Sub Stream" - See TicketAudits in tap-zendesk or tap-harvest V2 functional substreams, needs to emit schemas in a transitive dependency-friendly way
+  - Buffer yielding for sub streams - Wrap the generator in a loop that will read until a certain amount of time has passed and then yield back to the sync loop
+  - Sub stream split bookmark tracking, for dependent streams, bookmarks should roll up to each parent level above the last
+- (Sync Feature) Sync Context
+  - The sync functions for a stream can be wrapped in a decorator that wraps the return value in a tuple of (Stream, data) for interleaving streams
   - Needs to write and read "currently-syncing" state value (for sub-streams, should handle parent/sub level)
-- Field Selection Information for free! (require primary keys, emit available metadata, allow it to be overriden for unsupported, and filter records on sync!)
-- Add the ability to specify a post-transform-hook (a la adwords)
-- Add standard informational logging for starting tap, starting stream, etc.
-- Add standard metrics
-- Implement loading a sample config file from a relative path for dict-based validation (or absolute path. Why not?)
-- Run all streams if possible, catch errors and fail with "CRITICAL stream: error" at the end
+  - Should provide `start_date`
+- (Architecture) Functional style, e.g., `@stream("thing")`, `@stream("thing").sync("sync_a_thing")`, `@stream("thing").substream("child_thing").sync("get_child_for_thing")`, etc.
 
 # Potential Enhancements
 - Different types of abstractions (database use cases, bulk api, csv export?, variable stream types [specify multiple streams per class])
   - "For thing" sync mode. e.g., "function that returns list of accounts" -> "for each account, call sync"
-- stream-error ("Erroy syncing stream %s - {message}") wraps exceptions thrown from sync code
-- "Sub Stream" - See TicketAudits in tap-zendesk, needs to emit schemas in a transitive dependency-friendly way
-  - Buffer yielding for sub streams - Wrap the generator in a loop that will read until a certain amount of time has passed and then yield back to the sync loop
-  - Sub stream split bookmark tracking, for dependent streams, bookmarks should roll up to each parent level above the last
-- Client library stub generation? - The client library concept will need more guidance. I can envision something like Client.generate([list, of, endpoints]) as a decorator and it will mark up the class with functions to make calls to the specified endpoints as POST, PUT, GET, etc. For each verb needed.
-- (Perhaps with targets) Writing state messages to a file? -o --out-file option to support writing State messages to a file before emitting them? (may actually require monkey patching singer.write_message)
-  - Should also merge the state messages to a single record to be used in the next run
 - Retry sync? Function to restart the sync for a stream from the original bookmark, or with a current bookmark override.
-  - E.g., when tap-zuora fails on a 404 to retry the original sync instead of bombing out
-- Retry with backoff on sync requests? or the ability to specify it? (might be best to just leave it up to the user)
+  - E.g., when tap-zuora fails on a 404 for a sub-file to retry the original sync instead of bombing out
+  - Could be on stream spec like `@stream("thing", retry_sync_on=NotFoundException, setup_retry=reset_file_bookmarks)`
+- Client library stub generation? - The client library concept will need more guidance. I can envision something like Client.generate([list, of, endpoints]) as a decorator and it will mark up the class with functions to make calls to the specified endpoints as POST, PUT, GET, etc. For each verb needed.
+  - Retry with backoff on sync requests? or the ability to specify it? (might be best to just leave it up to the user)
+    - a la "backoff_strategy" on the client with a stub request that calls user-specified "request"
+- (Perhaps with targets) Writing state messages to a file? -o --out-file option to support writing State messages to a file before emitting them? (may actually require monkey patching singer.write_message)
 
 # Brainstorming
 
@@ -43,6 +48,8 @@ Some thoughts on how this library will look, overall. Flask-style app declaratio
 # - A way to describe its schema
 # - A way to write metadata to that schema
 #      - Can these be intertwined? (metadata is called with each node in the schema, so it's basically a "visit()")
+#      - The goal here being to remove the boilerplate "write primary keys, write replication key, loop over top-level properties"
+#          - Already handled with Tap's "write default metadata" for the most part.
 
 #### Flask Style Decorators
 tap = burler.tap(client, config_spec=None) # config could either be an example, Schema, or function that validates config and throws when failed. If None, no config required
