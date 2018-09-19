@@ -1,6 +1,6 @@
 from unittest import TestCase
 from burler.taps import Tap
-from burler.exceptions import ConfigValidationException
+from burler.exceptions import ConfigValidationException, StreamsNotFound
 
 from datetime import datetime # For equivalent schema and voluptuous definitions
 from schema import Schema as SSchema, And
@@ -75,3 +75,18 @@ class TestTapConfigValidation(TestCase):
         conf = {'start_date':'2015-03-14'}
         with self.assertRaises(ConfigValidationException):
             tap.validate_config(conf)
+
+class TestImportStreams(TestCase):
+    def tearDown(self):
+        Tap.streams = {}
+
+    def test_stream_import_throws_with_bogus_module(self):
+        tap = Tap()
+        with self.assertRaises(StreamsNotFound):
+            tap.load_streams("not.a.real.module")
+
+    def test_import_streams_adds_streams(self):
+        tap = Tap()
+        tap.load_streams("tests.resources.stream_definitions")
+        self.assertIn("invoices", Tap.streams)
+        self.assertIn("contacts", Tap.streams)

@@ -4,6 +4,9 @@ from burler.streams import Stream, stream
 from burler.exceptions import DuplicateStream
 
 class TestStreamMetaClass(TestCase):
+    def tearDown(self):
+        Tap.streams = {}
+
     def test_subclassing_stream_registers_with_tap(self):
         class TestStream(Stream):
             pass

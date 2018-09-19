@@ -1,7 +1,7 @@
 import json
 import sys
 
-from burler.exceptions import ConfigValidationException, SyncModeNotDefined, MissingCatalog, NoClientConfigured
+from burler.exceptions import ConfigValidationException, SyncModeNotDefined, MissingCatalog, NoClientConfigured, StreamsNotFound
 
 import singer
 import singer.logger as logging
@@ -150,7 +150,7 @@ class Tap:
             if not callable(getattr(instance, 'load_schema', None)):
                 instance.load_schema = lambda: {}
             if not callable(getattr(instance, 'load_metadata', None)):
-                instance.load_metadata = lambda _, _: metadata.new()
+                instance.load_metadata = lambda _0, _1: metadata.new()
             schema = instance.load_schema()
             streams.append({'stream': smd.display_name(),
                             'tap_stream_id': smd.unique_name(),
@@ -277,6 +277,15 @@ class Tap:
             self._sync(config, non_registered_catalog, state)
 
         self.__sync_using_registered_streams(config, catalog, state)
+
+    def load_streams(self, module_name):
+        """
+        Loads the module specified to register the streams it contains.
+        """
+        try:
+            __import__(module_name)
+        except ImportError as ex:
+            raise StreamsNotFound("Could not import module '{}' to load streams. Ensure that the Python module path is correct. e.g., tap_foo.streams.invoices".format(module_name)) from ex
 
     # Tap decorators
     def discovery_mode(self, func):

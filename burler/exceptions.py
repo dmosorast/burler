@@ -21,6 +21,9 @@ class MissingCatalog(BurlerException):
 class NoClientConfigured(BurlerException):
     pass
 
+class StreamsNotFound(BurlerException):
+    pass
+
 # schema_types.py
 class NoWSDLLocationSpecified(BurlerException):
     pass

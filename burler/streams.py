@@ -5,10 +5,10 @@ from burler.exceptions import DuplicateStream
 def _raise_duplicate_stream(name):
     raise DuplicateStream("Attempted to register duplicate stream ({}) using Stream class. For a single class that handles multiple stream names, use the decorator with a unique name:\n\n\t@stream(\"my_stream\", tap_stream_id=\"invoices\")\n\t@stream(\"my_stream\", tap_stream_id=\"contacts\")\n\tclass MyStream():\n\t\t...".format(name))
 
-__pascal_case_converter = re.compile(r'(.)([A-Z][a-z]+?)')
+_pascal_case_converter = re.compile(r'(.)([A-Z][a-z]+?)')
 
-def __class_name_to_underscore(name):
-    return __pascal_case_converter.sub(r'\1_\2', name).lower()
+def _class_name_to_underscore(name):
+    return _pascal_case_converter.sub(r'\1_\2', name).lower()
 
 def stream(name=None, tap_stream_id=None, stream_alias=None):
     """ A class decorator that registers a Stream class with the tap. """
@@ -16,7 +16,7 @@ def stream(name=None, tap_stream_id=None, stream_alias=None):
     def wrapped_stream(cls):
         nonlocal name
         if not name:
-            name = __class_name_to_underscore(cls.__name__)
+            name = _class_name_to_underscore(cls.__name__)
 
         class StreamMetadata(object):
             """ Metadata class that allows the Tap to use values configured during the tap run, and allows decorators to modify the definition of a stream's methods on the fly. """
@@ -48,7 +48,7 @@ class StreamMeta(type):
     def __init__(cls, name, bases, clsdict):
         # Check this out: https://stackoverflow.com/questions/18126552/how-to-run-code-when-a-class-is-subclassed
         if len(bases) > 0: # We only want to register classes that are sub-sub classed from this
-            underscore_cls_name = __class_name_to_underscore(name)
+            underscore_cls_name = _class_name_to_underscore(name)
             if underscore_cls_name in Tap.streams:
                 _raise_duplicate_stream(underscore_cls_name)
             stream(underscore_cls_name)(cls) # Call decorator wrapper explicitly
