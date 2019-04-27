@@ -15,9 +15,6 @@ from singer.utils import load_json
 
 LOGGER = logging.get_logger()
 
-## Entrypoint to help configure setuptools in the consuming package
-entry_point = "burler:tap_entry_point"
-
 TAP_ROOT = None
 
 def get_tap():
@@ -112,7 +109,7 @@ def execute_tap(tap_name, config, discover, state, catalog):
 @click.option('--discover', '-d', is_flag=True, help='Run discovery mode.')
 @click.option('--state', help='(Optional) State file to inform sync mode.')
 @click.option('--catalog', help='(Optional) Catalog to specify streams and metadata for sync mode.')
-def tap_entry_point(config, discover, state, catalog):
+def entry_point(config, discover, state, catalog):
     execute_tap(sys.argv[0].split(os.sep)[-1], config, discover, state, catalog)
 
 @cli.command(name='run',

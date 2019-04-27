@@ -14,6 +14,7 @@ A library to help write taps in accordance with the [Singer specification](https
   - [schema](https://github.com/keleshev/schema) - Validates according to a schema Schema object
   - (Coming Soon) Example Config File - Same as key-based inference, but a relative file path can be specified instead of a dict object
 - **Declarative Style** Most, if not all, configuration of a tap's components is performed via decorators. That way you can focus more on yielding records, and less on writing metrics!
+- **Discoverable Usage Errors** All detected errors in the configuration or setup of a tap should result in an actionable message, with example code.
 
 # Overview
 Burler provides multiple conveniences that can help support the development of a tap. Some of the biggest problems to solve when creating a tap are communicating with the source, defining the schema of the data, emitting records, and bookmarking at times that make sense. The goal of Burler is to remove boilerplate, so that you, the developer, can focus on the tougher stuff.
@@ -36,16 +37,11 @@ This can be used to run one of a variety of installed taps in the current enviro
 
 The goal of this entry point is to validate the output of a tap run, and can be used to ensure that the tap conforms to the Singer [Best Practices](https://github.com/singer-io/getting-started/blob/master/docs/BEST_PRACTICES.md#best-practices-for-building-a-singer-tap).
 
-### Convenience Property
-
-***Setup:*** By installing burler globally, or in your virtual environment outside of the tap's installation process, you can use it as a setup helper.
-
-#### burler.entry_point
+### Convenience Entry Point
 
 To be used in setup.py of the tap requiring the burler package in order to provide the familiar `tap-foo --config config.json` interface, like so:
 
 ```python
-import burler
 from setuptools import setup
 
 setup(name='tap-foo',
@@ -57,8 +53,8 @@ setup(name='tap-foo',
       ],
       entry_points = '''
           [console_scripts]
-          tap-foo={}
-      '''.format(burler.entry_point),
+          tap-foo=burler.entry_point
+      ''',
 ...
 )
 ```
