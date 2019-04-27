@@ -1,16 +1,25 @@
+"""
+Contains functions and classes for streamlining the registration and execution of
+streams by hooking them up to the global `tap` object.
+"""
 import re
 from burler.taps import Tap
 from burler.exceptions import DuplicateStream
 
 def _raise_duplicate_stream(name):
-    raise DuplicateStream("Attempted to register duplicate stream ({}) using Stream class. For a single class that handles multiple stream names, use the decorator with a unique name:\n\n\t@stream(\"my_stream\", tap_stream_id=\"invoices\")\n\t@stream(\"my_stream\", tap_stream_id=\"contacts\")\n\tclass MyStream():\n\t\t...".format(name))
+    raise DuplicateStream(("Attempted to register duplicate stream ({}) using Stream "
+                           "class. For a single class that handles multiple stream "
+                           "names, use the decorator with a unique name:\n\n"
+                           "\t@stream(\"my_stream\", tap_stream_id=\"invoices\")\n"
+                           "\t@stream(\"my_stream\", tap_stream_id=\"contacts\")\n"
+                           "\tclass MyStream():\n\t\t...").format(name))
 
 _pascal_case_converter = re.compile(r'(.)([A-Z][a-z]+?)')
 
 def _class_name_to_underscore(name):
     return _pascal_case_converter.sub(r'\1_\2', name).lower()
 
-def stream(name=None, tap_stream_id=None, stream_alias=None):
+def stream(name=None, tap_stream_id=None, stream_alias=None): # pylint: disable=unused-argument
     """ A class decorator that registers a Stream class with the tap. """
 
     def wrapped_stream(cls):
@@ -18,17 +27,24 @@ def stream(name=None, tap_stream_id=None, stream_alias=None):
         if not name:
             name = _class_name_to_underscore(cls.__name__)
 
-        class StreamMetadata(object):
-            """ Metadata class that allows the Tap to use values configured during the tap run, and allows decorators to modify the definition of a stream's methods on the fly. """
+        class StreamMetadata():
+            """
+            Metadata class that allows the Tap to use values configured during the
+            tap run, and allows decorators to modify the definition of a
+            stream's methods on the fly.
+            """
             def __init__(self, cls, name, tap_stream_id, stream_alias):
                 self.cls = cls
                 self.unique_name = lambda: tap_stream_id or name
                 self.display_name = lambda: name
                 self.emitted_name = lambda: stream_alias or tap_stream_id
 
-            def set_context(self, instance):
-                """ Sets the context to be used when calling the sync methods. This gives it bookmarks, catalog, etc. """
-                current_tap = Tap._Tap__tap
+            def set_context(self, instance): # pylint: disable=no-self-use
+                """
+                Sets the context to be used when calling the sync methods. This gives
+                it bookmarks, catalog, etc.
+                """
+                current_tap = Tap._Tap__tap # pylint: disable=protected-access
                 instance.client = current_tap.client
 
         smd = StreamMetadata(cls, name, tap_stream_id, stream_alias)
@@ -45,8 +61,14 @@ def stream(name=None, tap_stream_id=None, stream_alias=None):
     return wrapped_stream
 
 class StreamMeta(type):
+    """
+    Meta-class that allows us to automatically register streams with the
+    global `tap` when the `Stream` class is subclassed (at load time).
+    """
     def __init__(cls, name, bases, clsdict):
-        # Check this out: https://stackoverflow.com/questions/18126552/how-to-run-code-when-a-class-is-subclassed
+        super().__init__(cls, name, bases, clsdict)
+        # More Info:
+        # https://stackoverflow.com/questions/18126552/how-to-run-code-when-a-class-is-subclassed
         if len(bases) > 0: # We only want to register classes that are sub-sub classed from this
             underscore_cls_name = _class_name_to_underscore(name)
             if underscore_cls_name in Tap.streams:
@@ -55,6 +77,10 @@ class StreamMeta(type):
 
 # TODO: Should track active stream and metrics for it
 class Stream(metaclass=StreamMeta):
+    """
+    The main Stream parent class to provide Singer-related instrumentation
+    around the actions of a Stream subclass.
+    """
     def __init__(self):
         # Anything to do here?
         # If this is a metaclass, it should register itself with the tap
