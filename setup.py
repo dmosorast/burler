@@ -9,7 +9,7 @@ setup(name='burler',
       url='https://singer.io',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       install_requires=[
-          'singer-python==5.1.5',
+          'singer-python==5.5.0',
           'click==6.7',
           'schema==0.6.8',
           'voluptuous==0.11.1'

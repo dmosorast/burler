@@ -15,7 +15,6 @@ from voluptuous import Schema as VSchema, Invalid
 LOGGER = logging.get_logger()
 
 # Class that describes the basic structure of a "tap"
-# TODO: Load streams from module? Looks in the working directory, finds the specified module and loads the streams? To eliminate the "from tap.streams import *" junk...
 class Tap:
     __tap = None
 
