@@ -46,7 +46,7 @@ X Add Stream base class
   - burler.spec module?
   - Assert that the Ordering of records being returned from an API are as expected (e.g., @ensure_ordering('created_at', 'ASC') around the call that returns records)
   - Instrumentation to track bookmark advancement rate
-- (Patterns) Add patterns for sync styles, e.g., windowing, full-request-incremental-emit
+- (Patterns) Add patterns for sync styles, e.g., windowing, full-request-incremental-emit, etc.
 - (Architecture) Instead of pigeonholing into a framework, split into modules like `burler.config`, `burler.spec`, etc. that contain the pieces used by the automated Singer structure method.
   - That way people can grab the niceties without committing to the framework
 
