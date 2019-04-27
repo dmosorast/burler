@@ -7,9 +7,17 @@ GOAL: To enable speed of review by limiting noise and being opinionated about ta
 
 # Outstanding Base Features
 - (Architecture) Refactor out CLI
+- (Discovery Feature) Add support to resolve all varieties of schema references
 X Add Stream base class
   - (Sync Feature) Constants for replication method (Full Table, Key-Based Incremental, etc.)
-  - (Architecture) Load streams from module? To be used in place of "from tap.streams import *" in the root file
+  X (Architecture) Load streams from module? To be used in place of "from tap.streams import *" in the root file
+  - (Sync Feature) Provide handling for "INCREMENTAL" and "FULL_TABLE" (e.g., version tracking, activate version messages, etc.)
+    - `with full_table():` block to help with using the `ActivateVersionMessage`
+  - (Sync Feature) `emit_record` and `emit_records` that takes a list of records and emits them from the current stream class.
+    - This is so that we can emit records directly to the tap's output and wrap it in the stream type, to handle weird substream situations
+    - I imagine this would be preloaded with a function that calls a function on tap that will do a sub-portion of sync
+    - Should wrap the emitted records in a tuple to identify the stream they belong to
+    - Provide `stream="blah"` override to support classes handling two streams (like with a GraphQL endpoint)
 - (Sync Feature) Add the ability to specify a post-transform-hook (a la adwords)
 - (Logging) Add standard informational logging for starting tap, starting stream, etc.
 - (Metrics) Add standard metrics
@@ -20,13 +28,30 @@ X Add Stream base class
 - (Architecture) "Sub Stream" - See TicketAudits in tap-zendesk or tap-harvest V2 functional substreams, needs to emit schemas in a transitive dependency-friendly way
   - Buffer yielding for sub streams - Wrap the generator in a loop that will read until a certain amount of time has passed and then yield back to the sync loop
   - Sub stream split bookmark tracking, for dependent streams, bookmarks should roll up to each parent level above the last
+    - This is a harder problem than originally thought, due to lack of ordering guarantees
+    - To catch all of the data, we would need:
+      1. A bookmark key on the child
+      2. Propagation of that bookmark to the parent objects
+      3. A lookback window on the child bookmark to ensure that no async changes are missed that were made mid-sync.
+    - This is better handled by the implementer, to take advantage of semantic knowledge of the source
 - (Sync Feature) Sync Context
-  - The sync functions for a stream can be wrapped in a decorator that wraps the return value in a tuple of (Stream, data) for interleaving streams
   - Needs to write and read "currently-syncing" state value (for sub-streams, should handle parent/sub level)
   - Should provide `start_date`
 - (Architecture) Functional style, e.g., `@stream("thing")`, `@stream("thing").sync("sync_a_thing")`, `@stream("thing").substream("child_thing").sync("get_child_for_thing")`, etc.
+- (Verify Mode) Check catalog from discovery for unpublishable metadata
+- (Verify Mode) Check that the tap doesn't blow up when both properties and a catalog are passed in
+- (Sync Mode, Testing) Set of "monkeypatches" that add assertions to common tap calls, like write_record, request.get, write_bookmark, etc.
+  - Bookmark MUST advance by some multiple of time (threshold for WARN? based on ratio of advancement to run time?)
+  - Removed Paths (different paths, etc) Generate a schema that would match during the run.
+  - burler.spec module?
+  - Assert that the Ordering of records being returned from an API are as expected (e.g., @ensure_ordering('created_at', 'ASC') around the call that returns records)
+  - Instrumentation to track bookmark advancement rate
+- (Patterns) Add patterns for sync styles, e.g., windowing, full-request-incremental-emit
+- (Architecture) Instead of pigeonholing into a framework, split into modules like `burler.config`, `burler.spec`, etc. that contain the pieces used by the automated Singer structure method.
+  - That way people can grab the niceties without committing to the framework
 
 # Potential Enhancements
+- Report of rows synced/updated a-la tap-stripe at the end of the run
 - Different types of abstractions (database use cases, bulk api, csv export?, variable stream types [specify multiple streams per class])
   - "For thing" sync mode. e.g., "function that returns list of accounts" -> "for each account, call sync"
 - Retry sync? Function to restart the sync for a stream from the original bookmark, or with a current bookmark override.
