@@ -1,3 +1,5 @@
+***Note: This repo is clearly not maintained or complete, but looking at it revealed that there's some interesting stuff in here, so I've made it public. Enjoy!***
+
 # Burler
 
 > **def.** [[1]](https://www.merriam-webster.com/dictionary/burler) plural -s
